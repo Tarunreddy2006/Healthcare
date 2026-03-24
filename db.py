@@ -1,8 +1,3 @@
-"""
-database.py — Guardian AI
-Async MySQL connection pool via aiomysql.
-Provides a FastAPI dependency and one-time schema initialisation.
-"""
 
 import aiomysql
 import hashlib

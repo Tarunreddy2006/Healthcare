@@ -1,11 +1,3 @@
-"""
-services/gemini_service.py — Guardian AI
-Thin wrapper around the Gemini 3 Flash API.
-
-Two capabilities:
-  1. generate_doctor_briefing()  — 3-sentence clinical summary for /get-summary
-  2. summarise_conflicts()        — concise conflict advisory for /check-conflict
-"""
 
 import httpx
 import logging

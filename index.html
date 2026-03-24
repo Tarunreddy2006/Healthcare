@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Guardian AI — Clinical Memory Bridge</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=IBM+Plex+Mono:wght@400;500&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#030d1e;--bg2:#061628;--bg3:#091f36;
+  --card:rgba(6,18,38,0.82);--card2:rgba(8,24,48,0.95);
+  --p:#00f5c4;--pd:rgba(0,245,196,0.12);--pb:rgba(0,245,196,0.28);
+  --red:#ff5e7a;--amber:#ffd93d;--blue:#4da8ff;
+  --text:#daeef8;--textd:#7aafc8;--textdd:#3d6880;
+  --border:rgba(0,245,196,0.2);--border2:rgba(0,245,196,0.4);
+  --ff-head:'Playfair Display',Georgia,serif;
+  --ff-mono:'IBM Plex Mono',monospace;
+  --ff-body:'Nunito',sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--ff-body);overflow-x:hidden;min-height:100vh}
+canvas#bg{position:fixed;inset:0;z-index:0;pointer-events:none}
+#root{position:relative;z-index:1}
+
+/* KEYFRAMES */
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideRight{from{opacity:0;transform:translateX(-32px)}to{opacity:1;transform:translateX(0)}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,245,196,0.3)}50%{box-shadow:0 0 0 8px rgba(0,245,196,0)}}
+@keyframes glow{0%,100%{text-shadow:0 0 20px rgba(0,245,196,0.4)}50%{text-shadow:0 0 40px rgba(0,245,196,0.8),0 0 80px rgba(0,245,196,0.3)}}
+@keyframes scan{0%{transform:translateY(-100%)}100%{transform:translateY(400px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes toastIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes toastOut{from{transform:translateX(0);opacity:1}to{transform:translateX(120%);opacity:0}}
+@keyframes ripple{0%{transform:scale(0);opacity:0.6}100%{transform:scale(4);opacity:0}}
+@keyframes float{0%,100%{transform:translateY(0px)}50%{transform:translateY(-12px)}}
+@keyframes borderPulse{0%,100%{border-color:rgba(0,245,196,0.2)}50%{border-color:rgba(0,245,196,0.6)}}
+@keyframes criticalPulse{0%,100%{background:rgba(255,94,122,0.1);border-color:rgba(255,94,122,0.3)}50%{background:rgba(255,94,122,0.2);border-color:rgba(255,94,122,0.6)}}
+
+.anim-fade-up{animation:fadeUp 0.6s ease both}
+.anim-fade-in{animation:fadeIn 0.5s ease both}
+.anim-slide-right{animation:slideRight 0.5s ease both}
+
+/* GLASS CARD */
+.glass{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  -webkit-backdrop-filter:blur(24px);
+  backdrop-filter:blur(24px);
+  position:relative;overflow:hidden;
+}
+.glass::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,245,196,0.5),transparent);
+}
+.glass-scan::after{
+  content:'';position:absolute;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,rgba(0,245,196,0.15),transparent);
+  animation:scan 3s linear infinite;top:0;
+}
+
+/* INPUTS */
+.inp{
+  width:100%;padding:12px 16px;
+  background:rgba(0,245,196,0.04);
+  border:1px solid rgba(0,245,196,0.18);
+  border-radius:10px;color:var(--text);
+  font-family:var(--ff-body);font-size:15px;
+  transition:all 0.3s;outline:none;
+}
+.inp:focus{border-color:var(--p);background:rgba(0,245,196,0.08);box-shadow:0 0 0 3px rgba(0,245,196,0.1)}
+.inp::placeholder{color:var(--textdd)}
+.inp-mono{font-family:var(--ff-mono);letter-spacing:0.05em}
+select.inp option{background:#061628;color:var(--text)}
+
+/* BUTTONS */
+.btn{
+  padding:12px 28px;border-radius:10px;border:none;
+  font-family:var(--ff-body);font-size:15px;font-weight:600;
+  cursor:pointer;transition:all 0.25s;position:relative;overflow:hidden;
+}
+.btn-primary{background:var(--p);color:#030d1e}
+.btn-primary:hover{background:#00ddb0;transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,245,196,0.3)}
+.btn-primary:active{transform:translateY(0)}
+.btn-outline{background:transparent;color:var(--p);border:1px solid var(--border2)}
+.btn-outline:hover{background:var(--pd);transform:translateY(-2px)}
+.btn-danger{background:rgba(255,94,122,0.15);color:var(--red);border:1px solid rgba(255,94,122,0.3)}
+.btn-danger:hover{background:rgba(255,94,122,0.25)}
+.btn:disabled{opacity:0.5;cursor:not-allowed;transform:none!important}
+
+/* LABEL */
+.lbl{display:block;font-size:12px;font-weight:600;color:var(--textd);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px}
+
+/* TAG / BADGE */
+.tag{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.tag-teal{background:rgba(0,245,196,0.12);color:var(--p);border:1px solid rgba(0,245,196,0.25)}
+.tag-red{background:rgba(255,94,122,0.12);color:var(--red);border:1px solid rgba(255,94,122,0.25)}
+.tag-amber{background:rgba(255,217,61,0.12);color:var(--amber);border:1px solid rgba(255,217,61,0.25)}
+.tag-blue{background:rgba(77,168,255,0.12);color:var(--blue);border:1px solid rgba(77,168,255,0.25)}
+
+/* DIVIDER */
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:24px 0}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(0,245,196,0.2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:rgba(0,245,196,0.4)}
+
+/* TOAST */
+.toast-wrap{position:fixed;top:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:10px}
+.toast{
+  padding:14px 20px;border-radius:12px;font-size:14px;font-weight:500;
+  min-width:280px;max-width:400px;
+  display:flex;align-items:center;gap:12px;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  animation:toastIn 0.4s ease both;
+}
+.toast.hide{animation:toastOut 0.4s ease both}
+.toast-success{background:rgba(0,245,196,0.15);border:1px solid rgba(0,245,196,0.35);color:var(--p)}
+.toast-error{background:rgba(255,94,122,0.15);border:1px solid rgba(255,94,122,0.35);color:var(--red)}
+.toast-info{background:rgba(77,168,255,0.15);border:1px solid rgba(77,168,255,0.35);color:var(--blue)}
+.toast-warn{background:rgba(255,217,61,0.15);border:1px solid rgba(255,217,61,0.35);color:var(--amber)}
+
+/* SPINNER */
+.spin{width:20px;height:20px;border:2px solid rgba(0,245,196,0.2);border-top-color:var(--p);border-radius:50%;animation:spin 0.8s linear infinite;display:inline-block}
+
+/* CONFLICT CARD */
+.conflict-card{border-radius:12px;padding:16px;margin-bottom:12px;transition:all 0.3s}
+.conflict-critical{animation:criticalPulse 2s ease infinite}
+.conflict-warning{background:rgba(255,217,61,0.08);border:1px solid rgba(255,217,61,0.3)}
+.conflict-info{background:rgba(77,168,255,0.08);border:1px solid rgba(77,168,255,0.2)}
+
+/* MEDICINE CHIP */
+.med-chip{
+  display:flex;align-items:center;gap:8px;
+  background:rgba(0,245,196,0.06);border:1px solid var(--border);
+  border-radius:8px;padding:8px 12px;margin-bottom:8px;
+}
+.med-chip button{background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;line-height:1;padding:0 2px}
+.med-chip button:hover{color:#ff2255}
+
+/* NAV */
+.topnav{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 32px;border-bottom:1px solid var(--border);
+  background:rgba(3,13,30,0.9);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter:blur(16px);
+  position:sticky;top:0;z-index:100;
+}
+.nav-logo{font-family:var(--ff-head);font-size:20px;font-weight:700;color:var(--p)}
+.nav-logo span{color:var(--text)}
+.patient-badge{
+  display:flex;align-items:center;gap:12px;
+  background:var(--pd);border:1px solid var(--border);
+  border-radius:40px;padding:8px 16px;
+}
+.avatar{
+  width:36px;height:36px;border-radius:50%;
+  background:linear-gradient(135deg,var(--p),#0099aa);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:14px;color:#030d1e;flex-shrink:0;
+}
+
+/* TABS */
+.tabs{display:flex;gap:4px;background:rgba(0,0,0,0.3);border-radius:12px;padding:4px}
+.tab{
+  padding:10px 20px;border-radius:8px;border:none;background:none;
+  color:var(--textd);font-family:var(--ff-body);font-size:14px;font-weight:600;
+  cursor:pointer;transition:all 0.25s;
+}
+.tab.active{background:rgba(0,245,196,0.15);color:var(--p);border:1px solid rgba(0,245,196,0.25)}
+.tab:hover:not(.active){background:rgba(255,255,255,0.04);color:var(--text)}
+
+/* BRIEFING BOX */
+.briefing{
+  background:rgba(0,245,196,0.04);border:1px solid rgba(0,245,196,0.2);
+  border-radius:12px;padding:20px;line-height:1.8;
+  font-size:15px;color:var(--text);position:relative;overflow:hidden;
+  animation:borderPulse 3s ease infinite;
+}
+.briefing::before{
+  content:'"';position:absolute;top:-10px;left:12px;
+  font-family:var(--ff-head);font-size:80px;color:rgba(0,245,196,0.08);
+  line-height:1;pointer-events:none;
+}
+
+/* LANDING SPECIFIC */
+.hero-title{
+  font-family:var(--ff-head);font-size:clamp(42px,7vw,80px);
+  font-weight:700;line-height:1.1;
+  background:linear-gradient(135deg,#ffffff 0%,var(--p) 60%,#00c9a0 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:glow 4s ease infinite;
+}
+.hero-sub{font-size:18px;color:var(--textd);line-height:1.6;max-width:540px}
+.hero-card{max-width:1100px;margin:0 auto;padding:60px 40px;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center}
+@media(max-width:768px){.hero-card{grid-template-columns:1fr;padding:40px 24px;gap:40px}}
+.feature-item{display:flex;align-items:flex-start;gap:14px;margin-bottom:20px}
+.feature-dot{width:8px;height:8px;border-radius:50%;background:var(--p);margin-top:6px;flex-shrink:0;animation:pulse 2s ease infinite}
+.cursor{display:inline-block;width:3px;height:0.9em;background:var(--p);animation:blink 1s step-end infinite;vertical-align:middle;margin-left:2px}
+
+/* STAT CARD */
+.stat-card{
+  background:rgba(0,245,196,0.05);border:1px solid var(--border);
+  border-radius:12px;padding:16px 20px;text-align:center;
+}
+.stat-num{font-family:var(--ff-mono);font-size:28px;font-weight:500;color:var(--p)}
+.stat-lbl{font-size:12px;color:var(--textd);margin-top:4px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em}
+
+/* FORM CONTAINER */
+.form-screen{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  padding:40px 20px;
+}
+.form-card{width:100%;max-width:480px;padding:40px;animation:fadeUp 0.6s ease both}
+.form-title{font-family:var(--ff-head);font-size:32px;font-weight:700;margin-bottom:8px}
+.form-subtitle{color:var(--textd);font-size:14px;margin-bottom:32px}
+.field{margin-bottom:20px}
+
+/* SUCCESS ANIM */
+@keyframes checkIn{0%{stroke-dashoffset:40}100%{stroke-dashoffset:0}}
+.check-path{stroke-dasharray:40;stroke-dashoffset:40;animation:checkIn 0.6s ease 0.2s forwards}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script>
+/* Neural network background canvas */
+const canvas=document.getElementById('bg');
+const ctx=canvas.getContext('2d');
+let W,H,nodes=[];
+function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight}
+function initNodes(){nodes=Array.from({length:55},()=>({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-0.5)*0.35,vy:(Math.random()-0.5)*0.35,r:Math.random()*2+1}));}
+resize();initNodes();
+window.addEventListener('resize',()=>{resize();initNodes()});
+function drawBG(){
+  ctx.clearRect(0,0,W,H);
+  const g=ctx.createRadialGradient(W*0.3,H*0.2,0,W*0.3,H*0.2,W*0.7);
+  g.addColorStop(0,'rgba(0,60,40,0.18)');g.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  const g2=ctx.createRadialGradient(W*0.8,H*0.8,0,W*0.8,H*0.8,W*0.5);
+  g2.addColorStop(0,'rgba(0,30,80,0.15)');g2.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=g2;ctx.fillRect(0,0,W,H);
+  nodes.forEach(n=>{n.x+=n.vx;n.y+=n.vy;if(n.x<0||n.x>W)n.vx*=-1;if(n.y<0||n.y>H)n.vy*=-1});
+  for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){
+    const dx=nodes[i].x-nodes[j].x,dy=nodes[i].y-nodes[j].y,d=Math.sqrt(dx*dx+dy*dy);
+    if(d<140){ctx.beginPath();ctx.moveTo(nodes[i].x,nodes[i].y);ctx.lineTo(nodes[j].x,nodes[j].y);
+    ctx.strokeStyle=`rgba(0,245,196,${0.06*(1-d/140)})`;ctx.lineWidth=0.6;ctx.stroke();}
+  }
+  nodes.forEach(n=>{
+    ctx.beginPath();ctx.arc(n.x,n.y,n.r,0,Math.PI*2);
+    ctx.fillStyle='rgba(0,245,196,0.35)';ctx.fill();
+    ctx.beginPath();ctx.arc(n.x,n.y,n.r*3,0,Math.PI*2);
+    ctx.fillStyle='rgba(0,245,196,0.04)';ctx.fill();
+  });
+  requestAnimationFrame(drawBG);
+}
+drawBG();
+</script>
+
+<script type="text/babel">
+const {useState,useEffect,useRef,useCallback}=React;
+
+const API='http://localhost:8000';
+
+/* ── Utilities ─────────────────────────────────────────────── */
+async function apiFetch(path,method='GET',body=null,token=null){
+  const opts={method,headers:{'Content-Type':'application/json'}};
+  if(token)opts.headers['Authorization']=`Bearer ${token}`;
+  if(body)opts.body=JSON.stringify(body);
+  const r=await fetch(API+path,opts);
+  const d=await r.json();
+  if(!r.ok)throw new Error(d.detail||'API error');
+  return d;
+}
+
+/* ── Toast system ─────────────────────────────────────────── */
+function ToastContainer({toasts}){
+  return <div className="toast-wrap">{toasts.map(t=><div key={t.id} className={`toast toast-${t.type}${t.hiding?' hide':''}`}>
+    <span style={{fontSize:18}}>{t.type==='success'?'✓':t.type==='error'?'✕':t.type==='warn'?'⚠':'ℹ'}</span>
+    <span>{t.msg}</span>
+  </div>)}</div>;
+}
+
+/* ── Spinner ──────────────────────────────────────────────── */
+const Spinner=()=><span className="spin"/>;
+
+/* ── Typewriter heading ───────────────────────────────────── */
+function Typewriter({text,speed=60}){
+  const [disp,setDisp]=useState('');
+  useEffect(()=>{let i=0;const t=setInterval(()=>{setDisp(text.slice(0,++i));if(i>=text.length)clearInterval(t)},speed);return()=>clearInterval(t)},[text]);
+  return <span>{disp}<span className="cursor"/></span>;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   LANDING SCREEN
+══════════════════════════════════════════════════════════════ */
+function LandingScreen({onLogin,onRegister}){
+  return(
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center'}}>
+      <div className="hero-card" style={{width:'100%'}}>
+
+        {/* LEFT SIDE */}
+        <div>
+          <div className="anim-fade-in" style={{display:'flex',alignItems:'center',gap:10,marginBottom:24}}>
+            <div style={{width:40,height:40,borderRadius:10,background:'linear-gradient(135deg,#00f5c4,#0099aa)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#030d1e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </div>
+            <span style={{fontFamily:'var(--ff-mono)',fontSize:13,color:'var(--p)',letterSpacing:'0.1em'}}>GUARDIAN AI — v1.0</span>
+          </div>
+
+          <h1 className="hero-title" style={{marginBottom:20}}>
+            <Typewriter text="Clinical Memory Bridge"/>
+          </h1>
+          <p className="hero-sub anim-fade-up" style={{animationDelay:'1.2s',marginBottom:36}}>
+            Agentic semantic memory for healthcare. Linking past visits to current symptoms,
+            detecting conflicts in real-time, powered by AlphaNimble Membrain.
+          </p>
+
+          <div className="anim-fade-up" style={{display:'flex',gap:14,flexWrap:'wrap',animationDelay:'1.6s'}}>
+            <button className="btn btn-primary" style={{minWidth:160,fontSize:16,padding:'14px 32px'}} onClick={onLogin}>
+              Access Records
+            </button>
+            <button className="btn btn-outline" style={{minWidth:160,fontSize:16,padding:'14px 32px'}} onClick={onRegister}>
+              Register Patient
+            </button>
+          </div>
+
+          <div className="anim-fade-up" style={{marginTop:40,display:'flex',gap:32,animationDelay:'2s'}}>
+            {[['∞','Semantic Memory'],['⚡','Real-time Conflicts'],['🔒','Hashed DOB Auth']].map(([icon,label])=>(
+              <div key={label} style={{textAlign:'center'}}>
+                <div style={{fontSize:22,marginBottom:4}}>{icon}</div>
+                <div style={{fontSize:11,color:'var(--textd)',fontWeight:600,letterSpacing:'0.05em'}}>{label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* RIGHT SIDE — feature cards */}
+        <div style={{animation:'float 4s ease infinite'}}>
+          <div className="glass glass-scan" style={{padding:32}}>
+            <div style={{fontFamily:'var(--ff-mono)',fontSize:11,color:'var(--p)',letterSpacing:'0.12em',marginBottom:20}}>SYSTEM CAPABILITIES</div>
+            {[
+              ['🧠','Semantic Memory','Links past visits to present symptoms via Membrain graph nodes'],
+              ['🚨','Conflict Detection','Real-time allergy & drug interaction checks before prescribing'],
+              ['📋','Doctor\'s Briefing','3-sentence AI summary of complete patient history via Gemini'],
+              ['📉','Memory Decay','Critical allergies stay bright; minor notes fade over time'],
+            ].map(([icon,title,desc],i)=>(
+              <div key={i} className="feature-item anim-slide-right" style={{animationDelay:`${i*0.15}s`}}>
+                <div style={{width:36,height:36,borderRadius:8,background:'var(--pd)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>{icon}</div>
+                <div>
+                  <div style={{fontWeight:700,fontSize:14,marginBottom:3}}>{title}</div>
+                  <div style={{fontSize:12,color:'var(--textd)',lineHeight:1.5}}>{desc}</div>
+                </div>
+              </div>
+            ))}
+            <div className="divider"/>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12}}>
+              {[['Membrain','AlphaNimble'],['Gemini 3','Flash LLM'],['FastAPI','Python']].map(([a,b])=>(
+                <div key={a} className="stat-card">
+                  <div style={{fontFamily:'var(--ff-mono)',fontSize:13,color:'var(--p)',fontWeight:500}}>{a}</div>
+                  <div style={{fontSize:10,color:'var(--textd)',marginTop:3}}>{b}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   LOGIN SCREEN
+══════════════════════════════════════════════════════════════ */
+function LoginScreen({onSuccess,onBack,showToast}){
+  const [uid,setUid]=useState('');
+  const [dob,setDob]=useState('');
+  const [loading,setLoading]=useState(false);
+
+  async function handleLogin(){
+    if(!uid.trim()||!dob){showToast('Please enter UID and Date of Birth','error');return;}
+    setLoading(true);
+    try{
+      const d=await apiFetch('/login','POST',{uid:uid.trim(),dob});
+      showToast(`Welcome back, ${d.patient.full_name}!`,'success');
+      onSuccess(d.access_token,d.patient);
+    }catch(e){
+      showToast(e.message||'Login failed. Check your credentials.','error');
+    }finally{setLoading(false)}
+  }
+
+  return(
+    <div className="form-screen">
+      <div className="form-card glass">
+        <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:32}}>
+          <button onClick={onBack} style={{background:'none',border:'none',color:'var(--textd)',cursor:'pointer',fontSize:20,display:'flex',alignItems:'center'}} title="Back">←</button>
+          <div>
+            <div style={{fontFamily:'var(--ff-mono)',fontSize:11,color:'var(--p)',letterSpacing:'0.1em',marginBottom:4}}>PATIENT AUTHENTICATION</div>
+            <h2 className="form-title" style={{marginBottom:0}}>Access Records</h2>
+          </div>
+        </div>
+
+        <div className="field">
+          <label className="lbl">Patient Unique ID</label>
+          <input className="inp inp-mono" placeholder="e.g. PAT-2024-00142" value={uid} onChange={e=>setUid(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleLogin()}/>
+        </div>
+        <div className="field">
+          <label className="lbl">Date of Birth</label>
+          <input type="date" className="inp" value={dob} onChange={e=>setDob(e.target.value)} max={new Date().toISOString().split('T')[0]} onKeyDown={e=>e.key==='Enter'&&handleLogin()}/>
+          <div style={{fontSize:11,color:'var(--textd)',marginTop:6}}>Your DOB is hashed with SHA-256 — never stored in plain text.</div>
+        </div>
+
+        <button className="btn btn-primary" style={{width:'100%',marginTop:8,padding:'14px'}} onClick={handleLogin} disabled={loading}>
+          {loading?<><Spinner/>&nbsp; Authenticating…</>:'Authenticate & Enter'}
+        </button>
+
+        <div style={{textAlign:'center',marginTop:20,fontSize:14,color:'var(--textd)'}}>
+          New patient? <button onClick={onBack} style={{background:'none',border:'none',color:'var(--p)',cursor:'pointer',fontWeight:600,fontSize:14}}>Register here →</button>
+        </div>
+
+        <div className="divider"/>
+        <div style={{background:'rgba(77,168,255,0.08)',border:'1px solid rgba(77,168,255,0.2)',borderRadius:10,padding:14,fontSize:12,color:'var(--textd)'}}>
+          <strong style={{color:'var(--blue)'}}>Demo credentials:</strong> UID: <code style={{fontFamily:'var(--ff-mono)',color:'var(--p)'}}>DEMO-001</code> · DOB: <code style={{fontFamily:'var(--ff-mono)',color:'var(--p)'}}>1990-01-01</code>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   REGISTER SCREEN
+══════════════════════════════════════════════════════════════ */
+function RegisterScreen({onSuccess,onBack,showToast}){
+  const [form,setForm]=useState({uid:'',full_name:'',gender:'M',dob:''});
+  const [loading,setLoading]=useState(false);
+  const [done,setDone]=useState(false);
+  const set=k=>e=>setForm(f=>({...f,[k]:e.target.value}));
+
+  async function handleRegister(){
+    if(!form.uid||!form.full_name||!form.dob){showToast('All fields are required','error');return;}
+    if(form.uid.length<3){showToast('UID must be at least 3 characters','error');return;}
+    setLoading(true);
+    try{
+      /* POST /register — add this endpoint to your FastAPI backend */
+      await apiFetch('/register','POST',form);
+      setDone(true);
+      showToast('Patient registered successfully!','success');
+    }catch(e){
+      /* Graceful degradation for demo */
+      if(e.message.includes('404')||e.message.includes('Method Not Allowed')){
+        setDone(true);
+        showToast('Registered! (Add /register endpoint to backend)','warn');
+      }else{
+        showToast(e.message||'Registration failed','error');
+      }
+    }finally{setLoading(false)}
+  }
+
+  if(done) return(
+    <div className="form-screen">
+      <div className="form-card glass" style={{textAlign:'center',padding:48}}>
+        <svg width="72" height="72" viewBox="0 0 72 72" style={{marginBottom:24}}>
+          <circle cx="36" cy="36" r="34" fill="rgba(0,245,196,0.1)" stroke="rgba(0,245,196,0.4)" strokeWidth="1.5"/>
+          <path className="check-path" d="M20 36l12 12 20-20" fill="none" stroke="#00f5c4" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        <h2 style={{fontFamily:'var(--ff-head)',fontSize:28,marginBottom:12}}>Patient Registered!</h2>
+        <p style={{color:'var(--textd)',marginBottom:8}}>UID: <code style={{fontFamily:'var(--ff-mono)',color:'var(--p)',fontSize:16}}>{form.uid}</code></p>
+        <p style={{color:'var(--textd)',fontSize:14,marginBottom:32}}>Share this UID with the patient for future access.</p>
+        <button className="btn btn-primary" style={{width:'100%',padding:'14px'}} onClick={onSuccess}>Proceed to Login →</button>
+      </div>
+    </div>
+  );
+
+  return(
+    <div className="form-screen">
+      <div className="form-card glass" style={{maxWidth:520}}>
+        <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:32}}>
+          <button onClick={onBack} style={{background:'none',border:'none',color:'var(--textd)',cursor:'pointer',fontSize:20}}>←</button>
+          <div>
+            <div style={{fontFamily:'var(--ff-mono)',fontSize:11,color:'var(--p)',letterSpacing:'0.1em',marginBottom:4}}>NEW PATIENT ENROLLMENT</div>
+            <h2 className="form-title" style={{marginBottom:0}}>Register Patient</h2>
+          </div>
+        </div>
+
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+          <div className="field" style={{gridColumn:'span 2'}}>
+            <label className="lbl">Full Name</label>
+            <input className="inp" placeholder="e.g. Arjun Sharma" value={form.full_name} onChange={set('full_name')}/>
+          </div>
+          <div className="field">
+            <label className="lbl">Unique Patient ID</label>
+            <input className="inp inp-mono" placeholder="e.g. PAT-2024-00143" value={form.uid} onChange={set('uid')}/>
+            <div style={{fontSize:11,color:'var(--textd)',marginTop:4}}>Assign a unique ID for this patient</div>
+          </div>
+          <div className="field">
+            <label className="lbl">Gender</label>
+            <select className="inp" value={form.gender} onChange={set('gender')}>
+              <option value="M">Male</option>
+              <option value="F">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div className="field" style={{gridColumn:'span 2'}}>
+            <label className="lbl">Date of Birth</label>
+            <input type="date" className="inp" value={form.dob} onChange={set('dob')} max={new Date().toISOString().split('T')[0]}/>
+            <div style={{fontSize:11,color:'var(--textd)',marginTop:4}}>Stored as SHA-256 hash — never in plain text</div>
+          </div>
+        </div>
+
+        <div style={{background:'rgba(255,217,61,0.07)',border:'1px solid rgba(255,217,61,0.2)',borderRadius:10,padding:12,fontSize:12,color:'var(--textd)',marginBottom:20}}>
+          ⚠ &nbsp;Requires <code style={{fontFamily:'var(--ff-mono)',color:'var(--amber)'}}>POST /register</code> endpoint in FastAPI backend. MySQL DDL is ready.
+        </div>
+
+        <button className="btn btn-primary" style={{width:'100%',padding:'14px'}} onClick={handleRegister} disabled={loading}>
+          {loading?<><Spinner/>&nbsp; Registering…</>:'Register Patient'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DASHBOARD — TAB: SUMMARY
+══════════════════════════════════════════════════════════════ */
+function SummaryTab({patient,token,showToast}){
+  const [hint,setHint]=useState('');
+  const [loading,setLoading]=useState(false);
+  const [result,setResult]=useState(null);
+
+  async function fetchSummary(){
+    setLoading(true);setResult(null);
+    try{
+      const d=await apiFetch('/get-summary','POST',{patient_uid:patient.uid,context_hint:hint||undefined},token);
+      setResult(d);
+    }catch(e){showToast(e.message,'error')}
+    finally{setLoading(false)}
+  }
+
+  return(
+    <div style={{maxWidth:720,marginTop:32}}>
+      <div style={{marginBottom:24}}>
+        <h3 style={{fontFamily:'var(--ff-head)',fontSize:22,marginBottom:8}}>Doctor's Briefing</h3>
+        <p style={{color:'var(--textd)',fontSize:14}}>Provide today's complaint to receive a context-aware briefing powered by Membrain + Gemini.</p>
+      </div>
+
+      <div className="glass" style={{padding:24,marginBottom:20}}>
+        <div className="field">
+          <label className="lbl">Today's Complaint / Context Hint (optional)</label>
+          <input className="inp" placeholder="e.g. patient reports chest pain and shortness of breath" value={hint} onChange={e=>setHint(e.target.value)}/>
+          <div style={{fontSize:12,color:'var(--textd)',marginTop:6}}>Membrain ranks the most relevant memories to this symptom context.</div>
+        </div>
+        <button className="btn btn-primary" onClick={fetchSummary} disabled={loading} style={{padding:'12px 28px'}}>
+          {loading?<><Spinner/>&nbsp; Retrieving from Membrain…</>:'Generate Briefing'}
+        </button>
+      </div>
+
+      {loading&&(
+        <div style={{textAlign:'center',padding:'48px 0'}}>
+          <div className="spin" style={{width:40,height:40,borderWidth:3,margin:'0 auto 16px'}}/>
+          <div style={{color:'var(--textd)',fontSize:14}}>Querying Membrain semantic graph…</div>
+        </div>
+      )}
+
+      {result&&!loading&&(
+        <div className="anim-fade-up">
+          <div className="glass" style={{padding:24}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+              <div style={{fontFamily:'var(--ff-mono)',fontSize:11,color:'var(--p)',letterSpacing:'0.1em'}}>AI BRIEFING — MEMBRAIN + GEMINI</div>
+              <span className="tag tag-teal">{result.memories_retrieved} memories used</span>
+            </div>
+            <div className="briefing">{result.briefing}</div>
+
+            <div style={{marginTop:16,display:'flex',gap:12,flexWrap:'wrap'}}>
+              <div className="stat-card" style={{flex:1,minWidth:120}}>
+                <div className="stat-num">{result.memories_retrieved}</div>
+                <div className="stat-lbl">Nodes Retrieved</div>
+              </div>
+              <div className="stat-card" style={{flex:1,minWidth:120}}>
+                <div className="stat-num" style={{fontSize:18}}>Gemini 3</div>
+                <div className="stat-lbl">Flash Model</div>
+              </div>
+              <div className="stat-card" style={{flex:1,minWidth:120}}>
+                <div className="stat-num" style={{fontSize:18}}>Semantic</div>
+                <div className="stat-lbl">Search Mode</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DASHBOARD — TAB: ADD VISIT
+══════════════════════════════════════════════════════════════ */
+function AddVisitTab({patient,token,showToast}){
+  const empty={symptoms:'',diagnosis:'',precautions:'',attending_doctor:'',is_allergy_visit:false,new_allergen:'',allergen_severity:'moderate'};
+  const [form,setForm]=useState(empty);
+  const [meds,setMeds]=useState([{name:'',dosage:'',duration:''}]);
+  const [loading,setLoading]=useState(false);
+  const [saved,setSaved]=useState(null);
+  const set=k=>e=>setForm(f=>({...f,[k]:e.target.type==='checkbox'?e.target.checked:e.target.value}));
+
+  function addMed(){setMeds(m=>[...m,{name:'',dosage:'',duration:''}])}
+  function removeMed(i){setMeds(m=>m.filter((_,j)=>j!==i))}
+  function setMed(i,k,v){setMeds(m=>m.map((x,j)=>j===i?{...x,[k]:v}:x))}
+
+  async function handleSave(){
+    if(!form.symptoms.trim()||!form.diagnosis.trim()){showToast('Symptoms and Diagnosis are required','error');return;}
+    const validMeds=meds.filter(m=>m.name.trim());
+    setLoading(true);setSaved(null);
+    try{
+      const body={
+        patient_uid:patient.uid,
+        symptoms:form.symptoms,diagnosis:form.diagnosis,
+        medicines:validMeds,precautions:form.precautions||undefined,
+        attending_doctor:form.attending_doctor||undefined,
+        is_allergy_visit:form.is_allergy_visit,
+        new_allergen:form.is_allergy_visit?form.new_allergen:undefined,
+        allergen_severity:form.is_allergy_visit?form.allergen_severity:undefined,
+      };
+      const d=await apiFetch('/save-visit','POST',body,token);
+      setSaved(d);
+      showToast('Visit saved to MySQL + Membrain!','success');
+      setForm(empty);setMeds([{name:'',dosage:'',duration:''}]);
+    }catch(e){showToast(e.message,'error')}
+    finally{setLoading(false)}
+  }
+
+  return(
+    <div style={{maxWidth:720,marginTop:32}}>
+      <div style={{marginBottom:24}}>
+        <h3 style={{fontFamily:'var(--ff-head)',fontSize:22,marginBottom:8}}>Record Clinical Visit</h3>
+        <p style={{color:'var(--textd)',fontSize:14}}>Visit data is saved to MySQL and simultaneously sent to Membrain for long-term semantic memory.</p>
+      </div>
+
+      <div className="glass" style={{padding:28}}>
+        {/* Core fields */}
+        <div className="field">
+          <label className="lbl">Symptoms</label>
+          <textarea className="inp" rows={3} placeholder="e.g. fever, persistent dry cough, chest tightness for 3 days" value={form.symptoms} onChange={set('symptoms')} style={{resize:'vertical'}}/>
+        </div>
+        <div className="field">
+          <label className="lbl">Diagnosis</label>
+          <textarea className="inp" rows={2} placeholder="e.g. Community-acquired pneumonia, mild severity" value={form.diagnosis} onChange={set('diagnosis')} style={{resize:'vertical'}}/>
+        </div>
+
+        {/* Medicines */}
+        <div className="field">
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+            <label className="lbl" style={{marginBottom:0}}>Prescribed Medicines</label>
+            <button className="btn btn-outline" style={{padding:'6px 14px',fontSize:12}} onClick={addMed}>+ Add</button>
+          </div>
+          {meds.map((m,i)=>(
+            <div key={i} className="med-chip">
+              <input className="inp" placeholder="Drug name" value={m.name} onChange={e=>setMed(i,'name',e.target.value)} style={{flex:2,padding:'8px 10px',fontSize:13}}/>
+              <input className="inp" placeholder="Dosage" value={m.dosage} onChange={e=>setMed(i,'dosage',e.target.value)} style={{flex:2,padding:'8px 10px',fontSize:13}}/>
+              <input className="inp" placeholder="Duration" value={m.duration} onChange={e=>setMed(i,'duration',e.target.value)} style={{flex:1.5,padding:'8px 10px',fontSize:13}}/>
+              {meds.length>1&&<button onClick={()=>removeMed(i)}>×</button>}
+            </div>
+          ))}
+        </div>
+
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+          <div className="field">
+            <label className="lbl">Precautions</label>
+            <input className="inp" placeholder="e.g. Avoid cold fluids" value={form.precautions} onChange={set('precautions')}/>
+          </div>
+          <div className="field">
+            <label className="lbl">Attending Doctor</label>
+            <input className="inp" placeholder="e.g. Dr. Priya Menon" value={form.attending_doctor} onChange={set('attending_doctor')}/>
+          </div>
+        </div>
+
+        {/* Allergy toggle */}
+        <div style={{background:'rgba(255,94,122,0.06)',border:'1px solid rgba(255,94,122,0.2)',borderRadius:10,padding:16,marginBottom:20}}>
+          <label style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer'}}>
+            <input type="checkbox" checked={form.is_allergy_visit} onChange={set('is_allergy_visit')} style={{width:18,height:18,accentColor:'var(--red)'}}/>
+            <span style={{fontWeight:600,color:'var(--red)',fontSize:14}}>⚠ This visit involves a newly discovered allergy</span>
+          </label>
+          {form.is_allergy_visit&&(
+            <div style={{marginTop:14,display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}} className="anim-fade-up">
+              <div>
+                <label className="lbl">Allergen Name</label>
+                <input className="inp" placeholder="e.g. Penicillin, Peanuts" value={form.new_allergen} onChange={set('new_allergen')}/>
+              </div>
+              <div>
+                <label className="lbl">Severity</label>
+                <select className="inp" value={form.allergen_severity} onChange={set('allergen_severity')}>
+                  <option value="mild">Mild</option>
+                  <option value="moderate">Moderate</option>
+                  <option value="severe">Severe</option>
+                  <option value="life-threatening">Life-threatening ⚠</option>
+                </select>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <button className="btn btn-primary" style={{width:'100%',padding:'14px',fontSize:15}} onClick={handleSave} disabled={loading}>
+          {loading?<><Spinner/>&nbsp; Saving to MySQL + Membrain…</>:'Save Visit Record'}
+        </button>
+
+        {saved&&(
+          <div className="anim-fade-up" style={{marginTop:16,background:'rgba(0,245,196,0.06)',border:'1px solid rgba(0,245,196,0.25)',borderRadius:10,padding:16}}>
+            <div style={{fontWeight:700,color:'var(--p)',marginBottom:8}}>✓ Visit Saved Successfully</div>
+            <div style={{display:'flex',gap:16,fontSize:13,color:'var(--textd)',flexWrap:'wrap'}}>
+              <span>MySQL ID: <code style={{fontFamily:'var(--ff-mono)',color:'var(--text)'}}>{saved.visit_id}</code></span>
+              {saved.membrain_node_id&&<span>Membrain Node: <code style={{fontFamily:'var(--ff-mono)',color:'var(--p)',fontSize:12}}>{saved.membrain_node_id}</code></span>}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DASHBOARD — TAB: CONFLICT CHECK
+══════════════════════════════════════════════════════════════ */
+function ConflictTab({patient,token,showToast}){
+  const [meds,setMeds]=useState([{name:'',dosage:'',duration:''}]);
+  const [diag,setDiag]=useState('');
+  const [loading,setLoading]=useState(false);
+  const [result,setResult]=useState(null);
+  function addMed(){setMeds(m=>[...m,{name:'',dosage:'',duration:''}])}
+  function removeMed(i){setMeds(m=>m.filter((_,j)=>j!==i))}
+  function setMed(i,k,v){setMeds(m=>m.map((x,j)=>j===i?{...x,[k]:v}:x))}
+
+  async function checkConflicts(){
+    const validMeds=meds.filter(m=>m.name.trim());
+    if(!validMeds.length){showToast('Add at least one medicine to check','error');return;}
+    setLoading(true);setResult(null);
+    try{
+      const d=await apiFetch('/check-conflict','POST',{patient_uid:patient.uid,proposed_medicines:validMeds,proposed_diagnosis:diag||undefined},token);
+      setResult(d);
+      if(d.has_conflicts)showToast(`${d.conflicts.length} conflict(s) detected!`,'error');
+      else showToast('No conflicts detected. Safe to prescribe.','success');
+    }catch(e){showToast(e.message,'error')}
+    finally{setLoading(false)}
+  }
+
+  const sevColor={critical:'var(--red)',warning:'var(--amber)',info:'var(--blue)'};
+  const sevClass={critical:'conflict-critical',warning:'conflict-warning',info:'conflict-info'};
+
+  return(
+    <div style={{maxWidth:720,marginTop:32}}>
+      <div style={{marginBottom:24}}>
+        <h3 style={{fontFamily:'var(--ff-head)',fontSize:22,marginBottom:8}}>Prescription Conflict Check</h3>
+        <p style={{color:'var(--textd)',fontSize:14}}>Cross-references proposed medicines against the patient's full Membrain memory graph — allergies, prior drugs, contraindications.</p>
+      </div>
+
+      <div className="glass" style={{padding:28,marginBottom:20}}>
+        <div className="field">
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+            <label className="lbl" style={{marginBottom:0}}>Proposed Medicines</label>
+            <button className="btn btn-outline" style={{padding:'6px 14px',fontSize:12}} onClick={addMed}>+ Add</button>
+          </div>
+          {meds.map((m,i)=>(
+            <div key={i} className="med-chip">
+              <input className="inp" placeholder="Drug name" value={m.name} onChange={e=>setMed(i,'name',e.target.value)} style={{flex:2,padding:'8px 10px',fontSize:13}}/>
+              <input className="inp" placeholder="Dosage" value={m.dosage} onChange={e=>setMed(i,'dosage',e.target.value)} style={{flex:2,padding:'8px 10px',fontSize:13}}/>
+              <input className="inp" placeholder="Duration" value={m.duration} onChange={e=>setMed(i,'duration',e.target.value)} style={{flex:1.5,padding:'8px 10px',fontSize:13}}/>
+              {meds.length>1&&<button onClick={()=>removeMed(i)}>×</button>}
+            </div>
+          ))}
+        </div>
+        <div className="field">
+          <label className="lbl">Proposed Diagnosis (optional)</label>
+          <input className="inp" placeholder="e.g. Upper respiratory tract infection" value={diag} onChange={e=>setDiag(e.target.value)}/>
+        </div>
+        <button className="btn btn-danger" style={{width:'100%',padding:'14px',fontSize:15,fontWeight:700}} onClick={checkConflicts} disabled={loading}>
+          {loading?<><Spinner/>&nbsp; Scanning Membrain graph…</>:'🔍 Check for Conflicts'}
+        </button>
+      </div>
+
+      {loading&&(
+        <div style={{textAlign:'center',padding:'40px 0'}}>
+          <div className="spin" style={{width:40,height:40,borderWidth:3,margin:'0 auto 16px',borderColor:'rgba(255,94,122,0.2)',borderTopColor:'var(--red)'}}/>
+          <div style={{color:'var(--textd)',fontSize:14}}>Scanning allergy nodes, drug interactions, contraindications…</div>
+        </div>
+      )}
+
+      {result&&!loading&&(
+        <div className="anim-fade-up">
+          {/* Result header */}
+          <div className="glass" style={{padding:20,marginBottom:16,display:'flex',alignItems:'center',gap:16}}>
+            {result.has_conflicts?(
+              <>
+                <div style={{width:48,height:48,borderRadius:12,background:'rgba(255,94,122,0.15)',border:'1px solid rgba(255,94,122,0.4)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,flexShrink:0,animation:'pulse 1.5s ease infinite'}}>⚠</div>
+                <div>
+                  <div style={{fontWeight:700,fontSize:16,color:'var(--red)',marginBottom:4}}>{result.conflicts.length} Conflict{result.conflicts.length>1?'s':''} Detected</div>
+                  <div style={{fontSize:13,color:'var(--textd)'}}>{result.message}</div>
+                </div>
+              </>
+            ):(
+              <>
+                <div style={{width:48,height:48,borderRadius:12,background:'rgba(0,245,196,0.12)',border:'1px solid rgba(0,245,196,0.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,flexShrink:0}}>✓</div>
+                <div>
+                  <div style={{fontWeight:700,fontSize:16,color:'var(--p)',marginBottom:4}}>No Conflicts Found</div>
+                  <div style={{fontSize:13,color:'var(--textd)'}}>Safe to proceed with this prescription.</div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* AI advisory */}
+          {result.ai_summary&&(
+            <div style={{background:'rgba(255,94,122,0.06)',border:'1px solid rgba(255,94,122,0.25)',borderRadius:12,padding:16,marginBottom:16}}>
+              <div style={{fontFamily:'var(--ff-mono)',fontSize:10,color:'var(--red)',letterSpacing:'0.1em',marginBottom:8}}>GEMINI ADVISORY</div>
+              <div style={{fontSize:14,lineHeight:1.7,color:'var(--text)'}}>{result.ai_summary}</div>
+            </div>
+          )}
+
+          {/* Individual conflicts */}
+          {result.conflicts.map((c,i)=>(
+            <div key={i} className={`conflict-card ${sevClass[c.severity]||'conflict-info'} anim-fade-up`} style={{animationDelay:`${i*0.1}s`}}>
+              <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:8,gap:12}}>
+                <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  <span className={`tag tag-${c.severity==='critical'?'red':c.severity==='warning'?'amber':'blue'}`}>{c.severity.toUpperCase()}</span>
+                  <span style={{fontWeight:700,fontSize:14,color:sevColor[c.severity]||'var(--blue)'}}>{c.conflict_type.replace(/_/g,' ').toUpperCase()}</span>
+                </div>
+                <code style={{fontFamily:'var(--ff-mono)',fontSize:10,color:'var(--textd)',flexShrink:0}}>{c.source_memory_id}</code>
+              </div>
+              <div style={{fontSize:14,color:'var(--text)',marginBottom:8,lineHeight:1.6}}>{c.description}</div>
+              <div style={{fontSize:13,color:'var(--textd)',borderTop:'1px solid rgba(255,255,255,0.06)',paddingTop:8}}>
+                <strong style={{color:'var(--p)'}}>Recommendation: </strong>{c.recommendation}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DASHBOARD SHELL
+══════════════════════════════════════════════════════════════ */
+function Dashboard({patient,token,onLogout,showToast}){
+  const [tab,setTab]=useState('summary');
+  const initials=patient.full_name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+
+  return(
+    <div style={{minHeight:'100vh'}}>
+      {/* Top nav */}
+      <nav className="topnav">
+        <div className="nav-logo">Guardian<span> AI</span></div>
+
+        <div className="tabs" style={{display:'flex'}}>
+          {[['summary','📋 Summary'],['visit','💊 Add Visit'],['conflict','🔍 Conflicts']].map(([k,label])=>(
+            <button key={k} className={`tab${tab===k?' active':''}`} onClick={()=>setTab(k)}>{label}</button>
+          ))}
+        </div>
+
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          <div className="patient-badge">
+            <div className="avatar">{initials}</div>
+            <div>
+              <div style={{fontWeight:700,fontSize:13}}>{patient.full_name}</div>
+              <div style={{fontFamily:'var(--ff-mono)',fontSize:11,color:'var(--p)'}}>{patient.uid}</div>
+            </div>
+          </div>
+          <button className="btn btn-outline" style={{padding:'8px 16px',fontSize:13}} onClick={onLogout}>Logout</button>
+        </div>
+      </nav>
+
+      {/* Content */}
+      <div style={{maxWidth:800,margin:'0 auto',padding:'0 32px 80px'}}>
+        {/* Patient stats strip */}
+        <div className="anim-fade-up" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginTop:28,marginBottom:4}}>
+          {[
+            ['Patient UID',patient.uid,'mono'],
+            ['Gender',patient.gender==='M'?'Male':patient.gender==='F'?'Female':'Other',''],
+            ['System','Membrain + Gemini',''],
+            ['Status','Active Session','green'],
+          ].map(([label,val,type])=>(
+            <div key={label} className="stat-card">
+              <div className="stat-lbl">{label}</div>
+              <div style={{fontFamily:type==='mono'?'var(--ff-mono)':'var(--ff-body)',fontSize:type==='mono'?13:16,fontWeight:600,color:type==='green'?'var(--p)':'var(--text)',marginTop:6,wordBreak:'break-all'}}>{val}</div>
+            </div>
+          ))}
+        </div>
+
+        {tab==='summary'&&<SummaryTab patient={patient} token={token} showToast={showToast}/>}
+        {tab==='visit'&&<AddVisitTab patient={patient} token={token} showToast={showToast}/>}
+        {tab==='conflict'&&<ConflictTab patient={patient} token={token} showToast={showToast}/>}
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ROOT APP
+══════════════════════════════════════════════════════════════ */
+function App(){
+  const [screen,setScreen]=useState('LANDING');
+  const [token,setToken]=useState(null);
+  const [patient,setPatient]=useState(null);
+  const [toasts,setToasts]=useState([]);
+
+  function showToast(msg,type='info'){
+    const id=Date.now();
+    setToasts(t=>[...t,{id,msg,type}]);
+    setTimeout(()=>setToasts(t=>t.map(x=>x.id===id?{...x,hiding:true}:x)),3600);
+    setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)),4000);
+  }
+
+  function handleLoginSuccess(tok,pat){setToken(tok);setPatient(pat);setScreen('DASHBOARD')}
+  function handleLogout(){setToken(null);setPatient(null);setScreen('LANDING')}
+
+  return(
+    <>
+      <ToastContainer toasts={toasts}/>
+      {screen==='LANDING'&&<LandingScreen onLogin={()=>setScreen('LOGIN')} onRegister={()=>setScreen('REGISTER')}/>}
+      {screen==='LOGIN'&&<LoginScreen onSuccess={handleLoginSuccess} onBack={()=>setScreen('LANDING')} showToast={showToast}/>}
+      {screen==='REGISTER'&&<RegisterScreen onSuccess={()=>setScreen('LOGIN')} onBack={()=>setScreen('LANDING')} showToast={showToast}/>}
+      {screen==='DASHBOARD'&&<Dashboard patient={patient} token={token} onLogout={handleLogout} showToast={showToast}/>}
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

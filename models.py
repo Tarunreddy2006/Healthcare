@@ -1,8 +1,3 @@
-"""
-models.py — Guardian AI
-All Pydantic v2 request/response schemas used across the API.
-Keeps route handlers thin and validation centralised.
-"""
 
 from __future__ import annotations
 from datetime import date

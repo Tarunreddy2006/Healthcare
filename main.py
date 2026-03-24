@@ -1,16 +1,3 @@
-"""
-main.py — Guardian AI Backend
-FastAPI application entry point.
-
-Startup sequence:
-  1. Create MySQL connection pool
-  2. Initialise DB schema (idempotent)
-  3. Mount all route routers
-  4. Register CORS middleware
-
-Run with:
-  uvicorn main:app --reload --port 8000
-"""
 
 import logging
 from contextlib import asynccontextmanager

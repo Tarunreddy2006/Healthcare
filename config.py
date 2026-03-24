@@ -1,11 +1,12 @@
-"""
-config.py — Guardian AI
-Centralised configuration loaded from environment variables.
-All secrets live in a .env file; nothing is hard-coded.
-"""
 
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+
 
 
 class Settings(BaseSettings):
@@ -15,15 +16,17 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     # ── MySQL ─────────────────────────────────────────────────────
-    MYSQL_HOST: str = "localhost"
-    MYSQL_PORT: int = 3306
-    MYSQL_USER: str = "guardian_user"
-    MYSQL_PASSWORD: str = "change_me"
-    MYSQL_DATABASE: str = "guardian_ai"
+    MYSQL_HOST: str = os.getenv("MYSQL_HOST")
+    MYSQL_PORT: int = os.getenv("MYSQL_PORT")
+    MYSQL_USER: str = os.getenv("MYSQL_USER")
+    MYSQL_PASSWORD: str = os.getenv("MYSQL_PASSWORD")
+    MYSQL_DATABASE: str = os.getenv("MYSQL_DATABASE")
+
 
     # ── AlphaNimble Membrain ──────────────────────────────────────
-    MEMBRAIN_BASE_URL: str = "https://api.alphanimble.io/membrain/v1"
-    MEMBRAIN_API_KEY: str = "your_membrain_api_key_here"
+    MEMBRAIN_BASE_URL: str = os.getenv("BASE_URL")
+    MEMBRAIN_API_KEY: str = os.getenv("API_KEY")
+
 
     # Importance score thresholds (AlphaNimble philosophy)
     IMPORTANCE_CRITICAL: float = 1.0   # Allergies, life-threatening conditions
@@ -35,7 +38,7 @@ class Settings(BaseSettings):
     DECAY_FLOOR_CRITICAL: float = 0.90
 
     # ── Gemini ────────────────────────────────────────────────────
-    GEMINI_API_KEY: str = "your_gemini_api_key_here"
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API")
     GEMINI_MODEL: str = "gemini-3-flash"
 
     # ── Security ──────────────────────────────────────────────────

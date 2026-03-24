@@ -1,17 +1,3 @@
-"""
-services/membrain_service.py — Guardian AI
-AlphaNimble Membrain API client.
-
-Implements:
-  • store_visit_memory()    — POST /memories  (stores a visit as a semantic node)
-  • retrieve_patient_memory() — POST /memories/search (semantic search over a patient's history)
-  • get_conflict_signals()  — POST /memories/conflict  (proactive conflict analysis)
-
-AlphaNimble philosophy respected throughout:
-  • Importance Scores  : critical info (allergies) → 1.0; minor notes → 0.40
-  • Graph Relationships: visits are linked to each other and to the patient root node
-  • Memory Decay       : a floor is set for critical memories so they never fade
-"""
 
 import httpx
 import logging

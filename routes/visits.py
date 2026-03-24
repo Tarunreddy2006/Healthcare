@@ -1,15 +1,3 @@
-"""
-routes/visits.py — Guardian AI
-POST /save-visit — Persist a clinical visit to MySQL AND Membrain.
-
-Flow:
-  1. Validate auth token
-  2. Confirm patient_uid matches token (no cross-patient writes)
-  3. INSERT visit row into MySQL
-  4. If new allergy: INSERT into allergies table
-  5. Asynchronously push the full clinical context to Membrain
-  6. Update the visit row with the returned membrain_node_id
-"""
 
 import json
 import logging
