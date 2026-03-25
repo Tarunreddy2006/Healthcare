@@ -22,11 +22,10 @@ class Settings(BaseSettings):
     MYSQL_PASSWORD: str
     MYSQL_DATABASE: str
 
-    # ── AlphaNimble Membrain ──────────────────────────────────────
+    
     MEMBRAIN_BASE_URL: str
     MEMBRAIN_API_KEY: str
-
-    # Importance score thresholds
+    
     IMPORTANCE_CRITICAL: float = 1.0
     IMPORTANCE_HIGH: float = 0.85
     IMPORTANCE_MEDIUM: float = 0.65
@@ -34,11 +33,11 @@ class Settings(BaseSettings):
 
     DECAY_FLOOR_CRITICAL: float = 0.90
 
-    # ── Gemini ────────────────────────────────────────────────────
+    # ── Gemini ──
     GEMINI_API_KEY: str
     GEMINI_MODEL: str = "gemini-2.5-flash"
 
-    # ── Security ──────────────────────────────────────────────────
+    # ── Security ──────
     SECRET_KEY: str
     TOKEN_EXPIRE_MINUTES: int = 60
 
