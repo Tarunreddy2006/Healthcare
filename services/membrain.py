@@ -199,7 +199,7 @@ async def store_visit_memory(req: SaveVisitRequest, visit_db_id: int) -> Optiona
     # ── Call Membrain API ─────────────────────────────────────────────────────
     try:
         async with _get_client() as client:
-            resp = await client.post("/memories", json=payload)
+            resp = await client.post("/api/v1/memories", json=payload)
             resp.raise_for_status()
             data = resp.json()
             node_id: str = data.get("node_id") or data.get("id")
@@ -254,7 +254,7 @@ async def retrieve_patient_memory(
 
     try:
         async with _get_client() as client:
-            resp = await client.post("/memories/search", json=payload)
+            resp = await client.post("/api/v1/memories/search", json=payload)
             resp.raise_for_status()
             data = resp.json()
             memories: List[Dict] = data.get("results", [])
@@ -320,7 +320,7 @@ async def get_conflict_signals(
 
     try:
         async with _get_client() as client:
-            resp = await client.post("/memories/conflict", json=payload)
+            resp = await client.post("/api/v1/memories/conflict", json=payload)
             resp.raise_for_status()
             data = resp.json()
             conflicts: List[Dict] = data.get("conflicts", [])
