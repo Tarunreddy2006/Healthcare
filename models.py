@@ -5,7 +5,28 @@ from typing import List, Optional
 from pydantic import BaseModel, Field, field_validator
 import re
 
+# ═══════════════════════════════════════════════════════════════════════════════
+#  REGISTER
+# ═══════════════════════════════════════════════════════════════════════════════
 
+class RegisterRequest(BaseModel):
+    uid: str = Field(..., min_length=3, max_length=36, description="Unique Patient ID")
+    full_name: str = Field(..., min_length=2, description="Patient full name")
+    gender: str = Field(..., description="Male | Female | Other")
+    dob: str = Field(..., description="Date of Birth in YYYY-MM-DD format")
+
+    @field_validator("dob")
+    @classmethod
+    def validate_dob_format(cls, v: str) -> str:
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", v):
+            raise ValueError("dob must be in YYYY-MM-DD format")
+        return v
+
+
+class RegisterResponse(BaseModel):
+    success: bool
+    message: str
+    uid: str
 # ═══════════════════════════════════════════════════════════════════════════════
 #  AUTH
 # ═══════════════════════════════════════════════════════════════════════════════

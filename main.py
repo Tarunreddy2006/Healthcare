@@ -10,6 +10,7 @@ from config import get_settings
 from db import create_pool, close_pool, init_schema
 from routes.auth import router as auth_router
 from routes.visits import router as visits_router
+from routes.register import router as register_router
 from routes.summary import router as summary_router
 from routes.conflicts import router as conflicts_router
 
@@ -59,6 +60,7 @@ app.add_middleware(
 
 # ── Routers ───────────────────────────────────────────────────────────────────
 app.include_router(auth_router)
+app.include_router(register_router)
 app.include_router(visits_router)
 app.include_router(summary_router)
 app.include_router(conflicts_router)
