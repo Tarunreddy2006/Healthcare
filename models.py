@@ -27,9 +27,9 @@ class RegisterResponse(BaseModel):
     success: bool
     message: str
     uid: str
-# ═══════════════════════════════════════════════════════════════════════════════
+# ══════════
 #  AUTH
-# ═══════════════════════════════════════════════════════════════════════════════
+# ═══========
 
 class LoginRequest(BaseModel):
     uid: str = Field(..., min_length=3, max_length=36, description="Patient's Unique ID")
@@ -56,9 +56,9 @@ class PatientInfo(BaseModel):
     gender: str
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
+# ═══════════
 #  VISITS
-# ═══════════════════════════════════════════════════════════════════════════════
+# ════════════
 
 class Medicine(BaseModel):
     name: str = Field(..., description="Drug / medicine name")
@@ -99,9 +99,9 @@ class SaveVisitResponse(BaseModel):
     message: str
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
+# ═════════════
 #  SUMMARY
-# ═══════════════════════════════════════════════════════════════════════════════
+# ══════════════
 
 class SummaryRequest(BaseModel):
     patient_uid: str
@@ -119,9 +119,9 @@ class SummaryResponse(BaseModel):
     message: str = "OK"
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
+# ═════════════════════
 #  CONFLICT CHECK
-# ═══════════════════════════════════════════════════════════════════════════════
+# ═════════════════════
 
 class ConflictCheckRequest(BaseModel):
     patient_uid: str
