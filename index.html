@@ -285,7 +285,7 @@ async function apiFetch(path,method='GET',body=null,token=null){
   return d;
 }
 
-/* ── Toast system ─────────────────────────────────────────── */
+
 function ToastContainer({toasts}){
   return <div className="toast-wrap">{toasts.map(t=><div key={t.id} className={`toast toast-${t.type}${t.hiding?' hide':''}`}>
     <span style={{fontSize:18}}>{t.type==='success'?'✓':t.type==='error'?'✕':t.type==='warn'?'⚠':'ℹ'}</span>
@@ -293,19 +293,17 @@ function ToastContainer({toasts}){
   </div>)}</div>;
 }
 
-/* ── Spinner ──────────────────────────────────────────────── */
+
 const Spinner=()=><span className="spin"/>;
 
-/* ── Typewriter heading ───────────────────────────────────── */
+
 function Typewriter({text,speed=60}){
   const [disp,setDisp]=useState('');
   useEffect(()=>{let i=0;const t=setInterval(()=>{setDisp(text.slice(0,++i));if(i>=text.length)clearInterval(t)},speed);return()=>clearInterval(t)},[text]);
   return <span>{disp}<span className="cursor"/></span>;
 }
 
-/* ══════════════════════════════════════════════════════════════
-   LANDING SCREEN
-══════════════════════════════════════════════════════════════ */
+
 function LandingScreen({onLogin,onRegister}){
   return(
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center'}}>
@@ -382,9 +380,7 @@ function LandingScreen({onLogin,onRegister}){
   );
 }
 
-/* ══════════════════════════════════════════════════════════════
-   LOGIN SCREEN
-══════════════════════════════════════════════════════════════ */
+
 function LoginScreen({onSuccess,onBack,showToast}){
   const [uid,setUid]=useState('');
   const [dob,setDob]=useState('');
@@ -440,9 +436,7 @@ function LoginScreen({onSuccess,onBack,showToast}){
   );
 }
 
-/* ══════════════════════════════════════════════════════════════
-   REGISTER SCREEN
-══════════════════════════════════════════════════════════════ */
+
 function RegisterScreen({onSuccess,onBack,showToast}){
   const [form,setForm]=useState({uid:'',full_name:'',gender:'M',dob:''});
   const [loading,setLoading]=useState(false);
@@ -454,12 +448,12 @@ function RegisterScreen({onSuccess,onBack,showToast}){
     if(form.uid.length<3){showToast('UID must be at least 3 characters','error');return;}
     setLoading(true);
     try{
-      /* POST /register — add this endpoint to your FastAPI backend */
+   
       await apiFetch('/register','POST',form);
       setDone(true);
       showToast('Patient registered successfully!','success');
     }catch(e){
-      /* Graceful degradation for demo */
+    
       if(e.message.includes('404')||e.message.includes('Method Not Allowed')){
         setDone(true);
         showToast('Registered! (Add /register endpoint to backend)','warn');
@@ -532,9 +526,7 @@ function RegisterScreen({onSuccess,onBack,showToast}){
   );
 }
 
-/* ══════════════════════════════════════════════════════════════
-   DASHBOARD — TAB: SUMMARY
-══════════════════════════════════════════════════════════════ */
+
 function SummaryTab({patient,token,showToast}){
   const [hint,setHint]=useState('');
   const [loading,setLoading]=useState(false);
@@ -604,9 +596,7 @@ function SummaryTab({patient,token,showToast}){
   );
 }
 
-/* ══════════════════════════════════════════════════════════════
-   DASHBOARD — TAB: ADD VISIT
-══════════════════════════════════════════════════════════════ */
+
 function AddVisitTab({patient,token,showToast}){
   const empty={symptoms:'',diagnosis:'',precautions:'',attending_doctor:'',is_allergy_visit:false,new_allergen:'',allergen_severity:'moderate'};
   const [form,setForm]=useState(empty);
@@ -729,9 +719,7 @@ function AddVisitTab({patient,token,showToast}){
   );
 }
 
-/* ══════════════════════════════════════════════════════════════
-   DASHBOARD — TAB: CONFLICT CHECK
-══════════════════════════════════════════════════════════════ */
+
 function ConflictTab({patient,token,showToast}){
   const [meds,setMeds]=useState([{name:'',dosage:'',duration:''}]);
   const [diag,setDiag]=useState('');
@@ -848,9 +836,7 @@ function ConflictTab({patient,token,showToast}){
   );
 }
 
-/* ══════════════════════════════════════════════════════════════
-   DASHBOARD SHELL
-══════════════════════════════════════════════════════════════ */
+
 function Dashboard({patient,token,onLogout,showToast}){
   const [tab,setTab]=useState('summary');
   const initials=patient.full_name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
@@ -904,9 +890,7 @@ function Dashboard({patient,token,onLogout,showToast}){
   );
 }
 
-/* ══════════════════════════════════════════════════════════════
-   ROOT APP
-══════════════════════════════════════════════════════════════ */
+
 function App(){
   const [screen,setScreen]=useState('LANDING');
   const [token,setToken]=useState(null);
